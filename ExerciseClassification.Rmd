@@ -47,7 +47,8 @@ The columns chosen to build the final model are those with an overall importance
 
 Recreating the model with the subset of field names, we can use the model to try the predictions on a smaller subset of data that was set aside for validations.
 
-The following code goes back to the original training data and pulls all the records, but only the `r length(colnames)` columns that were identified as "important".  Since this is just a verification that we're on the right track before running the main model, rows are also pruned before generating the model, in order to reduce processing time.
+The following code goes back to the original training data and pulls all the records, but only the `r length(colnames)` columns that were identified as "important".  Since this is just a cross-validation to verify the logic of the model, rows are also pruned before generating the model, in order to reduce processing time.
+We're using the "important variables", so we should still expect to see high accuracy from the predictions run against the validation data set, even with the reduced number of rows.
 
 ```{r rerun_trimmed_columns, echo=TRUE,cache=TRUE}
 
@@ -72,11 +73,11 @@ confusionMatrix (results)
 
 ```
 
-The training results run against the validation data set look good enough to build the bigger model and run the test.  
+The training results run against the validation data set are close to 100% accuracy, as the confusion matrix shows.  This means our model logic is ready to build the bigger model and run the predictions against the given test data.  
 
 ## Final Results
 
-The code applied to the test set appears below, but since we weren't given the results in the test data set, there is no comparison to the actual results.  
+The code applied to the test set appears below, but since we weren't given the results in the test data set, there is no available confusion matrix or comparison to the actual results.  
 The results in the "final.predict" dataset were submitted to the course project and with 100% accuracy compared to the actual classification.
 
 

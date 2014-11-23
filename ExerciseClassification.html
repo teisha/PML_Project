@@ -111,7 +111,7 @@ varImp(modFit, scale = FALSE)</code></pre>
 <div id="building-the-model" class="section level2">
 <h2>Building The Model</h2>
 <p>Recreating the model with the subset of field names, we can use the model to try the predictions on a smaller subset of data that was set aside for validations.</p>
-<p>The following code goes back to the original training data and pulls all the records, but only the 31 columns that were identified as “important”. Since this is just a verification that we’re on the right track before running the main model, rows are also pruned before generating the model, in order to reduce processing time.</p>
+<p>The following code goes back to the original training data and pulls all the records, but only the 31 columns that were identified as “important”. Since this is just a cross-validation to verify the logic of the model, rows are also pruned before generating the model, in order to reduce processing time. We’re using the “important variables”, so we should still expect to see high accuracy from the predictions run against the validation data set, even with the reduced number of rows.</p>
 <pre class="r"><code>exercise.tiny &lt;- exercise.data[,c(colnames,&quot;classe&quot;)]
 exercise.train &lt;- createDataPartition (y=exercise.tiny$classe,
                                        p=0.6, list=FALSE)
@@ -161,11 +161,11 @@ confusionMatrix (results)</code></pre>
 ## Detection Rate          0.284    0.192    0.173    0.162    0.183
 ## Detection Prevalence    0.286    0.192    0.175    0.163    0.183
 ## Balanced Accuracy       0.999    0.995    0.995    0.994    0.999</code></pre>
-<p>The training results run against the validation data set look good enough to build the bigger model and run the test.</p>
+<p>The training results run against the validation data set are close to 100% accuracy, as the confusion matrix shows. This means our model logic is ready to build the bigger model and run the predictions against the given test data.</p>
 </div>
 <div id="final-results" class="section level2">
 <h2>Final Results</h2>
-<p>The code applied to the test set appears below, but since we weren’t given the results in the test data set, there is no comparison to the actual results.<br />The results in the “final.predict” dataset were submitted to the course project and with 100% accuracy compared to the actual classification.</p>
+<p>The code applied to the test set appears below, but since we weren’t given the results in the test data set, there is no available confusion matrix or comparison to the actual results.<br />The results in the “final.predict” dataset were submitted to the course project and with 100% accuracy compared to the actual classification.</p>
 <pre class="r"><code>model.final &lt;- train(classe~.,
                    data=exercise.tiny,
                    method=&quot;rf&quot;)
