@@ -1,0 +1,94 @@
+---
+title: "Exercise Classification"
+output: html_document
+---
+
+## Project Summary
+
+The project is investigating data taken from participants exercising while wearing sensors on their arms, belts and forearms and using weights that also had sensors attached to them.  The assignment was to use a subset of that data to create a model that can be used to predict the type of exercise that the participant was doing.  Once the model is created, it will be used to predict the results of a test data set.  This report describes the process used to create the model.
+
+## Exploring Data
+
+The initial data set had 160 variables, many of which were aggregated from the data collected by the sensors.  In order to focus on only the sensor data, the aggregated data needed to be excluded from the data set.
+
+
+```{r setup_data, echo=TRUE,cache=TRUE}
+library(caret); library(ggplot2)
+exercise.data <- read.csv("pml-training.csv")
+
+all.names <- !grepl('^kurtosis|^skewness|^max|^min|^total|^amplitude|^stddev|^var|^avg|^total', 
+       colnames(exercise.data))
+exercise.short <- exercise.data[,colnames(exercise.data[,all.names])]
+
+
+```
+
+Filtering out the aggregated columns, still leaves `r length(colnames(exercise.short))`.
+
+In order to filter the columns more, the varImp function can rank the variables used in a randomForest model in order of their importance to the output.
+So we build small model needs by running random forests on a subset of the data.  The data has been subsetted and the number of variables being sampled has been limited due to the lengthy processing required to run a random forest model.
+
+```{r  find_important_columns, echo=TRUE,cache=TRUE}
+smaller.set <- createDataPartition (y=exercise.short$classe,
+                                    p=0.3, list=FALSE)
+exercise.model <- exercise.short[smaller.set,]
+modFit <- train(classe~.,data=exercise.model[-c(1,3,4,5,6)],
+                method="rf",prox=TRUE,
+                tuneGrid = data.frame(mtry = 7))
+
+imp<-varImp(modFit, scale = FALSE)
+colnames<-rownames(imp$importance)[imp$importance$Overall > 50]
+varImp(modFit, scale = FALSE)
+```
+
+The columns chosen to build the final model are those with an overall importance > 50.  There are `r length(colnames)` fields.
+
+## Building The Model
+
+Recreating the model with the subset of field names, we can use the model to try the predictions on a smaller subset of data that was set aside for validations.
+
+The following code goes back to the original training data and pulls all the records, but only the `r length(colnames)` columns that were identified as "important".  Since this is just a verification that we're on the right track before running the main model, rows are also pruned before generating the model, in order to reduce processing time.
+
+```{r rerun_trimmed_columns, echo=TRUE,cache=TRUE}
+
+exercise.tiny <- exercise.data[,c(colnames,"classe")]
+exercise.train <- createDataPartition (y=exercise.tiny$classe,
+                                       p=0.6, list=FALSE)
+training <- exercise.tiny[exercise.train,]
+testing <- exercise.tiny[-exercise.train,]
+
+subset <- createDataPartition (y=training$classe,
+                               p=0.6, list=FALSE)
+initial.train <- training[subset,]
+initial.validate <- training[-subset,]
+
+modelFit <- train(classe~.,data=initial.train,
+                  method="rf",prox=TRUE,
+                  tuneGrid = data.frame(mtry = 7))
+initial.predict <- predict(modelFit, initial.validate)
+how.close <- initial.predict==initial.validate$classe
+results <- table(initial.predict, initial.validate$classe)
+confusionMatrix (results)
+
+```
+
+The training results run against the validation data set look good enough to build the bigger model and run the test.  
+
+## Final Results
+
+The code applied to the test set appears below, but since we weren't given the results in the test data set, there is no comparison to the actual results.  
+The results in the "final.predict" dataset were submitted to the course project and with 100% accuracy compared to the actual classification.
+
+
+```{r final_results, echo=TRUE,eval=FALSE}
+
+model.final <- train(classe~.,
+                   data=exercise.tiny,
+                   method="rf")
+test.data <- read.csv("pml-testing.csv")
+test.final <- test.data[,c(colnames,"problem_id")]
+final.predict <- predict(model.final, test.final)
+
+```
+
+
